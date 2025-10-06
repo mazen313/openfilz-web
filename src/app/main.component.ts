@@ -333,9 +333,10 @@ export class MainComponent implements OnInit {
 
   onMoveItem(item: FileItem) {
     const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
-      width: '600px',
+      width: '700px',
       data: {
-        title: 'Move to folder',
+        title: 'Move item',
+        actionType: 'move',
         currentFolderId: this.currentFolder?.id,
         excludeIds: [item.id]
       }
@@ -358,7 +359,7 @@ export class MainComponent implements OnInit {
             this.snackBar.open('Item moved successfully', 'Close', { duration: 3000 });
             this.loadFolder(this.currentFolder);
           },
-          error: (error) => {
+          error: (error: any) => {
             this.snackBar.open('Failed to move item', 'Close', { duration: 3000 });
           }
         });
@@ -368,9 +369,10 @@ export class MainComponent implements OnInit {
 
   onCopyItem(item: FileItem) {
     const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
-      width: '600px',
+      width: '700px',
       data: {
-        title: 'Copy to folder',
+        title: 'Copy item',
+        actionType: 'copy',
         currentFolderId: this.currentFolder?.id,
         excludeIds: []
       }
@@ -451,9 +453,10 @@ export class MainComponent implements OnInit {
     const selectedItems = this.selectedItems;
     if (selectedItems.length > 0) {
       const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
-        width: '600px',
+        width: '700px',
         data: {
-          title: `Move ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} to folder`,
+          title: `Move ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''}`,
+          actionType: 'move',
           currentFolderId: this.currentFolder?.id,
           excludeIds: selectedItems.map(item => item.id)
         }
@@ -513,9 +516,10 @@ export class MainComponent implements OnInit {
     const selectedItems = this.selectedItems;
     if (selectedItems.length > 0) {
       const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
-        width: '600px',
+        width: '700px',
         data: {
-          title: `Copy ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} to folder`,
+          title: `Copy ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''}`,
+          actionType: 'copy',
           currentFolderId: this.currentFolder?.id,
           excludeIds: []
         }
