@@ -12,17 +12,20 @@ import {FileGridComponent} from './components/file-grid/file-grid.component';
 import {FileListComponent} from './components/file-list/file-list.component';
 import {CreateFolderDialogComponent} from './dialogs/create-folder-dialog/create-folder-dialog.component';
 import {RenameDialogComponent, RenameDialogData} from './dialogs/rename-dialog/rename-dialog.component';
+import {FolderTreeDialogComponent} from './dialogs/folder-tree-dialog/folder-tree-dialog.component';
 
 import {DocumentApiService} from './services/document-api.service';
 import {FileIconService} from './services/file-icon.service';
 
 import {
+    CopyRequest,
     CreateFolderRequest,
     DeleteRequest,
     DocumentType,
     ElementInfo,
     FileItem,
     ListFolderAndCountResponse,
+    MoveRequest,
     RenameRequest,
     Root
 } from './models/document.models';
@@ -329,13 +332,81 @@ export class MainComponent implements OnInit {
   }
 
   onMoveItem(item: FileItem) {
-    // TODO: Implement move functionality with folder selection dialog
-    this.snackBar.open('Move functionality coming soon', 'Close', { duration: 3000 });
+    const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
+      width: '600px',
+      data: {
+        title: 'Move to folder',
+        currentFolderId: this.currentFolder?.id,
+        excludeIds: [item.id]
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(targetFolderId => {
+      if (targetFolderId !== undefined) {
+        const request: MoveRequest = {
+          documentIds: [item.id],
+          targetFolderId: targetFolderId,
+          allowDuplicateFileNames: false
+        };
+
+        const moveObservable = item.type === 'FOLDER'
+          ? this.documentApi.moveFolders(request)
+          : this.documentApi.moveFiles(request);
+
+        moveObservable.subscribe({
+          next: () => {
+            this.snackBar.open('Item moved successfully', 'Close', { duration: 3000 });
+            this.loadFolder(this.currentFolder);
+          },
+          error: (error) => {
+            this.snackBar.open('Failed to move item', 'Close', { duration: 3000 });
+          }
+        });
+      }
+    });
   }
 
   onCopyItem(item: FileItem) {
-    // TODO: Implement copy functionality with folder selection dialog
-    this.snackBar.open('Copy functionality coming soon', 'Close', { duration: 3000 });
+    const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
+      width: '600px',
+      data: {
+        title: 'Copy to folder',
+        currentFolderId: this.currentFolder?.id,
+        excludeIds: []
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(targetFolderId => {
+      if (targetFolderId !== undefined) {
+        const request: CopyRequest = {
+          documentIds: [item.id],
+          targetFolderId: targetFolderId,
+          allowDuplicateFileNames: false
+        };
+
+        if (item.type === 'FOLDER') {
+          this.documentApi.copyFolders(request).subscribe({
+            next: () => {
+              this.snackBar.open('Item copied successfully', 'Close', { duration: 3000 });
+              this.loadFolder(this.currentFolder);
+            },
+            error: (error: any) => {
+              this.snackBar.open('Failed to copy item', 'Close', { duration: 3000 });
+            }
+          });
+        } else {
+          this.documentApi.copyFiles(request).subscribe({
+            next: () => {
+              this.snackBar.open('Item copied successfully', 'Close', { duration: 3000 });
+              this.loadFolder(this.currentFolder);
+            },
+            error: (error: any) => {
+              this.snackBar.open('Failed to copy item', 'Close', { duration: 3000 });
+            }
+          });
+        }
+      }
+    });
   }
 
   onDeleteItem(item: FileItem) {
@@ -371,6 +442,130 @@ export class MainComponent implements OnInit {
           this.snackBar.open('Failed to download files', 'Close', { duration: 3000 });
           this.isDownloading = false;
           console.log('isDownloading:', this.isDownloading);
+        }
+      });
+    }
+  }
+
+  onMoveSelected() {
+    const selectedItems = this.selectedItems;
+    if (selectedItems.length > 0) {
+      const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
+        width: '600px',
+        data: {
+          title: `Move ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} to folder`,
+          currentFolderId: this.currentFolder?.id,
+          excludeIds: selectedItems.map(item => item.id)
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(targetFolderId => {
+        if (targetFolderId !== undefined) {
+          const folders = selectedItems.filter(item => item.type === 'FOLDER');
+          const files = selectedItems.filter(item => item.type === 'FILE');
+
+          let totalOperations = 0;
+          if (folders.length > 0) totalOperations++;
+          if (files.length > 0) totalOperations++;
+
+          let completed = 0;
+          const handleCompletion = () => {
+            completed++;
+            if (completed === totalOperations) {
+              this.snackBar.open('Items moved successfully', 'Close', { duration: 3000 });
+              this.loadFolder(this.currentFolder);
+            }
+          };
+
+          if (folders.length > 0) {
+            const request: MoveRequest = {
+              documentIds: folders.map(f => f.id),
+              targetFolderId: targetFolderId,
+              allowDuplicateFileNames: false
+            };
+            this.documentApi.moveFolders(request).subscribe({
+              next: () => handleCompletion(),
+              error: (error: any) => {
+                this.snackBar.open('Failed to move items', 'Close', { duration: 3000 });
+              }
+            });
+          }
+
+          if (files.length > 0) {
+            const request: MoveRequest = {
+              documentIds: files.map(f => f.id),
+              targetFolderId: targetFolderId,
+              allowDuplicateFileNames: false
+            };
+            this.documentApi.moveFiles(request).subscribe({
+              next: () => handleCompletion(),
+              error: (error: any) => {
+                this.snackBar.open('Failed to move items', 'Close', { duration: 3000 });
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  onCopySelected() {
+    const selectedItems = this.selectedItems;
+    if (selectedItems.length > 0) {
+      const dialogRef = this.dialog.open(FolderTreeDialogComponent, {
+        width: '600px',
+        data: {
+          title: `Copy ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} to folder`,
+          currentFolderId: this.currentFolder?.id,
+          excludeIds: []
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(targetFolderId => {
+        if (targetFolderId !== undefined) {
+          const folders = selectedItems.filter(item => item.type === 'FOLDER');
+          const files = selectedItems.filter(item => item.type === 'FILE');
+
+          let totalOperations = 0;
+          if (folders.length > 0) totalOperations++;
+          if (files.length > 0) totalOperations++;
+
+          let completed = 0;
+          const handleCompletion = () => {
+            completed++;
+            if (completed === totalOperations) {
+              this.snackBar.open('Items copied successfully', 'Close', { duration: 3000 });
+              this.loadFolder(this.currentFolder);
+            }
+          };
+
+          if (folders.length > 0) {
+            const request: CopyRequest = {
+              documentIds: folders.map(f => f.id),
+              targetFolderId: targetFolderId,
+              allowDuplicateFileNames: false
+            };
+            this.documentApi.copyFolders(request).subscribe({
+              next: () => handleCompletion(),
+              error: (error: any) => {
+                this.snackBar.open('Failed to copy items', 'Close', { duration: 3000 });
+              }
+            });
+          }
+
+          if (files.length > 0) {
+            const request: CopyRequest = {
+              documentIds: files.map(f => f.id),
+              targetFolderId: targetFolderId,
+              allowDuplicateFileNames: false
+            };
+            this.documentApi.copyFiles(request).subscribe({
+              next: () => handleCompletion(),
+              error: (error: any) => {
+                this.snackBar.open('Failed to copy items', 'Close', { duration: 3000 });
+              }
+            });
+          }
         }
       });
     }
