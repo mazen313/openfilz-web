@@ -40,6 +40,19 @@
   <div class="loading-container" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
+
+  @if (totalItems > pageSize && !loading) {
+    <div class="pagination-container">
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[25, 50, 75, 100]"
+        (page)="onPageChange($event)"
+        aria-label="Select page">
+      </mat-paginator>
+    </div>
+  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

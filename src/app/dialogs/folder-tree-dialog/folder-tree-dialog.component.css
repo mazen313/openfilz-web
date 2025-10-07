@@ -138,6 +138,19 @@ mat-dialog-content {
   min-height: 400px;
 }
 
+.pagination-container {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 24px 8px 8px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #ffffff;
+}
+
+.pagination-container mat-paginator {
+  background: transparent;
+}
+
 mat-dialog-actions {
   padding: 16px 24px;
   border-top: 1px solid #e5e7eb;
