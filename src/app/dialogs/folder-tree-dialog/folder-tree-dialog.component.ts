@@ -47,8 +47,9 @@ export class FolderTreeDialogComponent implements OnInit {
   loading = true;
 
   totalItems = 0;
-  pageSize = 50;
+  pageSize = 10;
   pageIndex = 0;
+  pageSizeOptions: number[] = [10, 20, 50, 70, 100];
 
   constructor(
     private dialogRef: MatDialogRef<FolderTreeDialogComponent>,
