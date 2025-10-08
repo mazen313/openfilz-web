@@ -62,9 +62,6 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "local-dev": {
-              "buildTarget": "openfilz-ui:build:local-dev"
-            },
             "development": {
               "buildTarget": "openfilz-ui:build:local-dev"
             },
